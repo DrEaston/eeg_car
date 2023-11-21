@@ -20,8 +20,8 @@ import pandas
 global connected
 connected = False
 #change name of the port here
-port = 'COM7'
-#port = '/dev/ttyUSB0'
+#port = 'COM7'
+port = '/dev/ttyUSB0'
 baud = 230400
 global input_buffer
 global sample_buffer
@@ -34,7 +34,18 @@ sample_buffer = np.linspace(0,0,display_size)
 serial_port = serial.Serial(port, baud, timeout=0)
 
 
+def smoothTriangle(data, degree):
+    triangle=np.concatenate((np.arange(degree + 1), np.arange(degree)[::-1])) # up then down
+    smoothed=[]
 
+    for i in range(degree, len(data) - degree * 2):
+        point=data[i:i + len(triangle)] * triangle
+        smoothed.append(np.sum(point)/np.sum(triangle))
+    # Handle boundaries
+    smoothed=[smoothed[0]]*int(degree + degree/2) + smoothed
+    while len(smoothed) < len(data):
+        smoothed.append(smoothed[-1])
+    return smoothed
 
 def checkIfNextByteExist():
         global cBufTail
@@ -157,6 +168,13 @@ def read_from_port(ser):
 thread = threading.Thread(target=read_from_port, args=(serial_port,))
 thread.start()
 xi = np.linspace(-display_size/sample_rate, 0, num=display_size)
+xi=xi[1:]
+
+import neurokit2
+
+
+
+
 while True:
     plt.ion()
     plt.show(block=False)
@@ -165,62 +183,37 @@ while True:
         print(len(sample_buffer))
         yi = sample_buffer.copy()
         yi = yi[-display_size:]
+ 
 
+        arr2 = np.where(yi>300, 1, 0) 
+        arr2=arr2*100
+        arr3=np.diff(arr2)
+        arr2=arr2[1:]
+        boolDiff=arr3>0
+        xvals=xi[boolDiff]
 
-        plt.figure('Raw')
+        yi=yi[1:]
+        yvals= yi[boolDiff]
+
+        print(f"xvals: {xvals}")
+        print(f"yvals: {yvals}")
+
+ 
+
+        print(f"shape arr2: {arr2.shape}")
+        print(f"shape arr3: {arr3.shape}")
+        print(f"shape xi: {arr3.shape}")
+        print(f"shape yi: {yi.shape}")
 
 
         sample_buffer = sample_buffer[-display_size:]
         plt.clf()      
 
         plt.ylim(-550, 550)
+        
         plt.plot(xi, yi, linewidth=1, color='royalblue')
+        plt.plot(xi, arr2, linewidth=1, color='magenta')
+        plt.plot(xi, arr3, linewidth=1, color='purple')
+        plt.scatter(xvals, yvals, color='green')
         plt.pause(0.001)
         time.sleep(0.08)
-
-        data=yi
-        length_data=np.shape(data)
-        length_new=length_data[0]*0.05
-        ld_int=int(length_new)
-        from scipy import signal
-        data_new=signal.resample(data,ld_int)
-
-
-
-        mpw = plt.mlab.window_hanning(np.ones(256))
-        f, t, d = signal.spectrogram(data_new, 500, detrend=False,nfft=256,window=mpw)
-        position_vector=[]
-        length_f=np.shape(f)
-        l_row_f=length_f[0]
-        for i in range(0, l_row_f):
-            if f[i]>=7 and f[i]<=12:
-                position_vector.append(i)
-
-        length_d=np.shape(d)
-        l_col_d=length_d[1]
-        AlphaRange=[]
-        for i in range(0,l_col_d):
-            AlphaRange.append(np.mean(d[position_vector[0]:max(position_vector)+1,i]))
-
-
-        def smoothTriangle(data, degree):
-            triangle=np.concatenate((np.arange(degree + 1), np.arange(degree)[::-1])) # up then down
-            smoothed=[]
-
-            for i in range(degree, len(data) - degree * 2):
-                point=data[i:i + len(triangle)] * triangle
-                smoothed.append(np.sum(point)/np.sum(triangle))
-            # Handle boundaries
-            smoothed=[smoothed[0]]*int(degree + degree/2) + smoothed
-            while len(smoothed) < len(data):
-                smoothed.append(smoothed[-1])
-            return smoothed
-
-        plt.figure('AlphaRange')
-        # y=smoothTriangle(AlphaRange, 100)
-
-        plt.clf()  
-        plt.plot(AlphaRange)
-        plt.ylim(-1, 20)
-        plt.show()
-        
