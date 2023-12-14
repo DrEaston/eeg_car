@@ -20,15 +20,15 @@ import pandas
 global connected
 connected = False
 #change name of the port here
-#port = 'COM7'
-port = '/dev/ttyUSB0'
+port = 'COM7'
+# port = '/dev/ttyUSB0'
 baud = 230400
 global input_buffer
 global sample_buffer
 global cBufTail
 cBufTail = 0
 input_buffer = []
-sample_rate = 1000
+sample_rate = 10000
 display_size = 30000 #3 seconds
 sample_buffer = np.linspace(0,0,display_size)
 serial_port = serial.Serial(port, baud, timeout=0)
@@ -160,7 +160,7 @@ def read_from_port(ser):
 #here we overwrite if we left some parts of the frame from previous processing 
 #should be changed             
                 input_buffer = reading.copy()
-                print("len(reading)",len(reading))
+                # print("len(reading)",len(reading))
                 handle_data(reading)
            
            time.sleep(0.001)
@@ -170,7 +170,6 @@ thread.start()
 xi = np.linspace(-display_size/sample_rate, 0, num=display_size)
 xi=xi[1:]
 
-import neurokit2
 
 
 
@@ -180,7 +179,6 @@ while True:
     plt.show(block=False)
     if(len(sample_buffer)>0):
         #i = len(sample_buffer)
-        print(len(sample_buffer))
         yi = sample_buffer.copy()
         yi = yi[-display_size:]
  
@@ -195,17 +193,7 @@ while True:
         yi=yi[1:]
         yvals= yi[boolDiff]
 
-        print(f"xvals: {xvals}")
-        print(f"yvals: {yvals}")
-
- 
-
-        print(f"shape arr2: {arr2.shape}")
-        print(f"shape arr3: {arr3.shape}")
-        print(f"shape xi: {arr3.shape}")
-        print(f"shape yi: {yi.shape}")
-
-
+    
         sample_buffer = sample_buffer[-display_size:]
         plt.clf()      
 
@@ -217,3 +205,11 @@ while True:
         plt.scatter(xvals, yvals, color='green')
         plt.pause(0.001)
         time.sleep(0.08)
+
+        avg=[]
+        for i, val in enumerate(xvals):
+            if i !=0:
+                avg.append(xvals[i]-xvals[i-1])
+            
+        if len(avg)>1:
+            print(1/(sum(avg)/len(avg))*60)
