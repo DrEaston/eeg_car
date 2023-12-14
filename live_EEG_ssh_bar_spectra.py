@@ -1,13 +1,14 @@
-# Backyard Brains Sep. 2019
-# Made for python 3
-# First install serial library
-# Install numpy, pyserial, matplotlib
-# pip3 install pyserial
-#
-# Code will read, parse and display data from BackyardBrains' serial devices
-#
-# Written by Stanislav Mircic
-# stanislav@backyardbrains.com
+"""
+Curtis Easton, Blake McBride, Ying Liu, Matthew Riley
+Composed for CS 437, University of Illinois Urbana Champaign
+
+First install serial library
+pip3 install pyserial
+Install numpy, pyserial, pysci, paramiko
+
+Code from BackyardBrains reads from serial device
+Custom code quanitifies EEG and sends SSH signals to picar
+"""
 
 import threading
 import serial
